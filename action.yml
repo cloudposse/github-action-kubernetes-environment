@@ -48,18 +48,25 @@ runs:
   using: "composite"
   steps:
 
-    - id: yaml-to-json
+    - uses: actions/checkout@v3
+      
+    - run: |
+        echo ${{ inputs.config }} > config.yml
       shell: bash
-      run: |
-        echo "json=$(echo '${{ inputs.config }}' | yq -o=json . -c)" >> $GITHUB_OUTPUT
-        
-        
+      
+    - uses: fabasoad/data-format-converter-action@main
+      id: yaml-to-json
+      with:
+        input: "config.yml"
+        from: "yaml"
+        to: "json"
+    
     - name: Evaluate Config
       id: parse-config
       uses: actions/github-script@v6
       with:
         script: |
-          let data = JSON.parse('${{ steps.yaml-to-json.outputs.result }}');
+          let data = JSON.parse('${{ steps.yaml-to-json.outputs.output }}');
           let environment = '${{ inputs.environment }}';
           for(const [environment, config] of Object.entries(JSON.parse(data))) {
             if(environment === '${{ inputs.environment }}' {
