@@ -92,7 +92,9 @@ runs:
                   new_value = value.toLowerCase()
                 }
           
-                data[environment][key] = new_value;
+                if(new_value !== '') {
+                  data[environment][key] = new_value;
+                }
           
                 if(key === 'reformat') {
                   core.setOutput('reformat', value);
