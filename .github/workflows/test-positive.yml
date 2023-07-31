@@ -17,6 +17,15 @@ jobs:
   test:
     strategy:
       matrix: 
+        include:
+          - env: preview
+            namespace: ns
+          - env: preview-prs
+            namespace: pr-${{ github.event.number }}
+          - env: production
+            namespace: Foo_Bar/ZYX | dns-sanitize
+          - env: dev
+            namespace: dev
         env: [preview, preview-prs, production, dev]
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -24,15 +33,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - id: random-number-generator
-        run: echo "random-number=$(echo $RANDOM)" >> $GITHUB_OUTPUT
         
       - uses: ./
         id: current
         with:
           environment: ${{ matrix.env }}
-          namespace: ${{ steps.random-number-generator.outputs.random-number }}
+          namespace: ns
           application: "app"
           config: |
             preview:
@@ -42,7 +48,7 @@ jobs:
             
             preview-prs:
               cluster: cluster-preview-prs
-              namespace: bar-${{ steps.random-number-generator.outputs.random-number }}
+              namespace: bar-123
               reformat: pr-number
             
             production:
@@ -56,7 +62,7 @@ jobs:
       - uses: nick-fields/assert-action@v1
         with:
           actual: "${{ steps.current.outputs.environment-config }}"
-          expected: 'true'
+          expected: '${{ matrix.namespace }}'
 
   assert:
     runs-on: ubuntu-latest

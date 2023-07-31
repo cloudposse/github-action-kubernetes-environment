@@ -43,7 +43,7 @@ outputs:
     value: ${{ steps.result.outputs.ssm-path }}
   environment-config:
     description: "Environment configuration"
-    value: ${{ steps.to-yaml.outputs.result }}
+    value: ${{ steps.json-to-yaml.outputs.output }}
 runs:
   using: "composite"
   steps:
