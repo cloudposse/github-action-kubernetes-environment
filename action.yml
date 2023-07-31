@@ -1,23 +1,106 @@
-name: 'Example composite GitHub action'
-description: 'Example composite GitHub action'
-author: hello@cloudposse.com
-branding:
-  icon: 'file'
-  color: 'white'
+name: 'Environments - ArgoCD'
+description: 'Get information about environment'
 inputs:
-  param1:
+  environment:
+    description: "Environment"
     required: true
-    description: "Input parameter placeholder"
-    default: "true"
+  namespace:
+    description: Kubernetes namespace
+    required: true
+  application:
+    description: "The application name"
+    required: false
+  config:
+    description: "configuration"
+    required: true
+  namespace-prefix:
+    description: Kubernetes namespace prefix
+    required: false
+    default: ''
+  namespace-suffix:
+    description: Kubernetes namespace suffix
+    required: false
+    default: ''
+  namespace-deny-list:
+    description: Kubernetes namespace deny list, generated names cannot contain this comma separated list.
+    required: false
+    default: kube-system,kube-public,default
 outputs:
-  result1:
-    description: "Output result placeholder"
-    value: "${{ steps.context.outputs.action-result }}"
+  name:
+    description: "Environment name"
+    value: ${{ steps. }}
+  role:
+    description: "Environments that need to be deployed"
+    value: ${{ steps.result.outputs.cluster-role }}
+  cluster:
+    description: "Environments that need to be destroyed"
+    value: ${{ steps.result.outputs.cluster }}
+  namespace:
+    description: "Namespace"
+    value: ${{ steps.result.outputs.namespace }}
+  ssm-path:
+    description: "Path to ssm secrets"
+    value: ${{ steps.result.outputs.ssm-path }}
+  environment-config:
+    description: "Environment configuration"
+    value: ${{ steps.to-yaml.outputs.result }}
 runs:
   using: "composite"
   steps:
-    - id: context
-      shell: bash
-      run: |
-          echo "action-result=${{ inputs.param1 }}" >> $GITHUB_OUTPUT
 
+    - name: Evaluate Config
+      id: parse-config
+      uses: actions/github-script@v6
+      with:
+        script: |
+          let data = JSON.parse('${{ inputs.config }}');
+          let environment = '${{ inputs.environment }}';
+          for(const [environment, config] of Object.entries(JSON.parse(data))) {
+            if(environment === '${{ inputs.environment }}' {
+              for(const [key, value] of Object.entries(config)) {
+                if(key === 'reformat') {
+                  core.setOutput('reformat', value);
+                  delete data[environment][key];
+                }
+              }
+            }
+          }
+          core.setOutput('stripped-config', JSON.stringify(data[environment]));
+          
+    - name: Reformat
+      if: ${{ steps.parse-config.outputs.reformat }}
+      uses: cloudposse/kubernetes-namespace-builder-composite-action@main
+      id: reformat
+      with:
+        flavor: ${{ steps.parse-config.outputs.reformat }}
+        app-name: ${{ inputs.application }}
+        prefix: ${{ inputs.namespace-prefix }}
+        suffix: ${{ inputs.namespace-suffix }}
+        deny-list: ${{ inputs.namespace-deny-list }}
+
+    - name: Merge Substitutions
+      id: merge-config
+      uses: actions/github-script@v6
+      with:
+        script: |
+          let data = JSON.parse('${{ steps.parse-config.outputs.stripped-config }}');
+          if('${{ steps.parse-config.outputs.reformat }}') {
+            data['namespace'] = '${{ steps.reformat.outputs.kubernetes-namespace }}';
+          }
+          core.setOutput('merged-config', JSON.stringify(data));
+    
+#    - run: |
+#        mkdir /tmp/
+#        echo ${{ steps.merge-config.outputs.merged-config }} | jq -r . >> 
+#      shell: bash
+    - uses: mikefarah/yq@v4.34.2
+      id: to-yaml
+      with:
+        cmd: yq -Poy ${steps.merge-config.outputs.merged-config}
+        
+    - name: Environment info
+      uses: cloudposse/github-action-yaml-config-query@0.1.0
+      id: result
+      with:
+        query: .
+        config: ${{ steps.to-yaml.outputs.result }}

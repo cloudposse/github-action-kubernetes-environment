@@ -15,6 +15,9 @@ jobs:
         run: echo "Do setup"
 
   test:
+    strategy:
+      matrix: 
+        env: [preview, preview-prs, production, dev]
     runs-on: ubuntu-latest
     continue-on-error: true
     needs: [setup]
@@ -22,13 +25,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - id: random-number-generator
+        run: echo "random-number=$(echo $RANDOM)" >> $GITHUB_OUTPUT
+        
       - uses: ./
         id: current
         with:
-          param1: 'true'
+          environment: ${{ matrix.env }}
+          namespace: ${{ steps.random-number-generator.outputs.random-number }}
+          application: "app"
+          config: |
+            preview:
+              cluster: cluster-preview
+              namespace: ${{inputs.namespace}}
+              reformat: branch-name
+            
+            preview-prs:
+              cluster: cluster-preview-prs
+              namespace: bar-${{ steps.random-number-generator.outputs.random-number }}
+              reformat: pr-number
+            
+            production:
+              cluster: cluster-production
+              namespace: Foo_Bar/ZYX | dns-sanitize
 
-    outputs:
-      result: "${{ steps.current.outputs.result1 }}"
+            dev:
+              cluster: cluster-dev
+              namespace: dev
+
+      - uses: nick-fields/assert-action@v1
+        with:
+          actual: "${{ steps.current.outputs.environment-config }}"
+          expected: 'true'
 
   assert:
     runs-on: ubuntu-latest
