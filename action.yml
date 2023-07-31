@@ -51,7 +51,7 @@ runs:
     - id: yaml-to-json
       shell: bash
       run: |
-        echo 'json=$(echo ${{ inputs.config }} | yq -j .)' >> $GITHUB_OUTPUT
+        echo "json=$(echo '${{ inputs.config }}' | yq -j .)" >> $GITHUB_OUTPUT
         
         
     - name: Evaluate Config
