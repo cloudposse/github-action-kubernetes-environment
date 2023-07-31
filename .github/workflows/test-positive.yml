@@ -23,7 +23,7 @@ jobs:
           - env: preview-prs
             expected-namespace: app-pr-undefined # undefined here because this is called through dispatch
           - env: production
-            expected-namespace: foo-bar-zyx | kebabcase
+            expected-namespace: foo-bar-zyx
           - env: dev
             expected-namespace: dev
         env: [preview, preview-prs, production, dev]
