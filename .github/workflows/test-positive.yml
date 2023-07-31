@@ -19,9 +19,9 @@ jobs:
       matrix: 
         include:
           - env: preview
-            expected-namespace: ns
+            expected-namespace: app-ns
           - env: preview-prs
-            expected-namespace: pr-${{ github.event.number }}
+            expected-namespace: app-pr-undefined # undefined here because this is called through dispatch
           - env: production
             expected-namespace: Foo_Bar/ZYX | dns-sanitize
           - env: dev

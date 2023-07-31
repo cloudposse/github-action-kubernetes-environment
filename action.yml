@@ -90,6 +90,7 @@ runs:
         prefix: ${{ inputs.namespace-prefix }}
         suffix: ${{ inputs.namespace-suffix }}
         deny-list: ${{ inputs.namespace-deny-list }}
+        override-branch-name: ${{ inputs.namespace }}
 
     - name: Merge Substitutions
       id: merge-config
