@@ -19,13 +19,13 @@ jobs:
       matrix: 
         include:
           - env: preview
-            namespace: ns
+            expected-namespace: ns
           - env: preview-prs
-            namespace: pr-${{ github.event.number }}
+            expected-namespace: pr-${{ github.event.number }}
           - env: production
-            namespace: Foo_Bar/ZYX | dns-sanitize
+            expected-namespace: Foo_Bar/ZYX | dns-sanitize
           - env: dev
-            namespace: dev
+            expected-namespace: dev
         env: [preview, preview-prs, production, dev]
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -61,8 +61,8 @@ jobs:
 
       - uses: nick-fields/assert-action@v1
         with:
-          actual: "${{ steps.current.outputs.environment-config }}"
-          expected: '${{ matrix.namespace }}'
+          actual: "${{ steps.current.outputs.namespace }}"
+          expected: '${{ matrix.expected-namespace }}'
 
   assert:
     runs-on: ubuntu-latest
