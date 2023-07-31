@@ -118,4 +118,4 @@ runs:
       id: result
       with:
         query: .
-        config: ${{ steps.json-to-yaml.outputs.result }}
+        config: ${{ steps.json-to-yaml.outputs.output }}
