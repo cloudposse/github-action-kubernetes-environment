@@ -96,24 +96,26 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-          let data = JSON.parse('${{ steps.parse-config.outputs.stripped-config }}');
+          let data = JSON.parse(`${{ steps.parse-config.outputs.stripped-config }}`);
           if('${{ steps.parse-config.outputs.reformat }}') {
             data['namespace'] = '${{ steps.reformat.outputs.kubernetes-namespace }}';
           }
           core.setOutput('merged-config', JSON.stringify(data));
     
-#    - run: |
-#        mkdir /tmp/
-#        echo ${{ steps.merge-config.outputs.merged-config }} | jq -r . >> 
-#      shell: bash
-    - uses: mikefarah/yq@v4.34.2
-      id: to-yaml
+    - run: |
+        echo '''${{ steps.merge-config.outputs.merged-config }}''' > merged-config.json
+      shell: bash
+
+    - uses: fabasoad/data-format-converter-action@main
+      id: yaml-to-json
       with:
-        cmd: yq -Poy ${steps.merge-config.outputs.merged-config}
+        input: "merged-config.json"
+        from: "json"
+        to: "yaml"
         
     - name: Environment info
       uses: cloudposse/github-action-yaml-config-query@0.1.0
       id: result
       with:
         query: .
-        config: ${{ steps.to-yaml.outputs.result }}
+        config: ${{ steps.yaml-to-json.outputs.result }}
