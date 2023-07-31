@@ -75,23 +75,23 @@ runs:
               for(const [key, value] of Object.entries(config)) {
                 // Support `|` Operations
                 if(String(value).includes('|')) {
-                  value = value.split('|')[0].trim()
+                  let new_value = value.split('|')[0].trim()
                   operation = value.split('|')[1].trim()
                 }
             
                 if(operation === 'kebab' || operation === 'kebabcase' || operation === 'toKebab') {
-                  value = value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_/]+/g, '-').toLowerCase()
+                  new_value = value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_/]+/g, '-').toLowerCase()
                 }
                 
                 if(operation === 'upper' || operation === 'uppercase' || operation === 'toUpper') {
-                  value = value.toLowerCase()
+                  new_value = value.toLowerCase()
                 }
           
                 if(operation === 'lower' || operation === 'lowercase' || operation === 'toLower') {
-                  value = value.toLowerCase()
+                  new_value = value.toLowerCase()
                 }
           
-                data[environment][key] = value;
+                data[environment][key] = new_value;
           
                 if(key === 'reformat') {
                   core.setOutput('reformat', value);
