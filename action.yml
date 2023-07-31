@@ -66,7 +66,7 @@ runs:
       uses: actions/github-script@v6
       with:
         script: |
-          let data = JSON.parse('${{ steps.yaml-to-json.outputs.output }}');
+          let data = JSON.parse(`${{ steps.yaml-to-json.outputs.output }}`);
           let environment = '${{ inputs.environment }}';
           for(const [environment, config] of Object.entries(JSON.parse(data))) {
             if(environment === '${{ inputs.environment }}' {
