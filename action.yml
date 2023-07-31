@@ -80,16 +80,24 @@ runs:
                   operation = value.split('|')[1].trim()
                 }
             
-                if(operation === 'kebab' || operation === 'kebabcase' || operation === 'toKebab') {
-                  new_value = value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_/]+/g, '-').toLowerCase()
-                }
-                
-                if(operation === 'upper' || operation === 'uppercase' || operation === 'toUpper') {
-                  new_value = value.toLowerCase()
-                }
-          
-                if(operation === 'lower' || operation === 'lowercase' || operation === 'toLower') {
-                  new_value = value.toLowerCase()
+                switch(operation) {
+                  case 'kebab':
+                  case 'kebabcase':
+                  case 'toKebab':
+                    new_value = new_value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_/]+/g, '-').toLowerCase()
+                    break;
+                  case 'upper':
+                  case 'uppercase':
+                  case 'toUpper':
+                    new_value = new_value.toLowerCase()
+                    break;
+                  case 'lower':
+                  case 'lowercase':
+                  case 'toLower':
+                    new_value = new_value.toLowerCase()
+                    break;
+                  default:
+                    new_value = new_value
                 }
           
                 if(new_value !== '') {
