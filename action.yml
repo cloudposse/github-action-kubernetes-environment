@@ -28,7 +28,7 @@ inputs:
 outputs:
   name:
     description: "Environment name"
-    value: ${{ steps. }}
+    value: ${{ inputs.environment }}
   role:
     description: "Environments that need to be deployed"
     value: ${{ steps.result.outputs.cluster-role }}
