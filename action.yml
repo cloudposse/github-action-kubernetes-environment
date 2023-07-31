@@ -48,12 +48,18 @@ runs:
   using: "composite"
   steps:
 
+    - id: yaml-to-json
+      shell: bash
+      run: |
+        echo ${{ inputs.config }} | yq -j . > /tmp/config.json
+        echo "::set-output name=result::$(cat /tmp/config.json)"
+        
     - name: Evaluate Config
       id: parse-config
       uses: actions/github-script@v6
       with:
         script: |
-          let data = JSON.parse('${{ inputs.config }}');
+          let data = JSON.parse('${{ steps.yaml-to-json.outputs.result }}');
           let environment = '${{ inputs.environment }}';
           for(const [environment, config] of Object.entries(JSON.parse(data))) {
             if(environment === '${{ inputs.environment }}' {
