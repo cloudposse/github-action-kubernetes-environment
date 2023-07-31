@@ -107,7 +107,7 @@ runs:
       shell: bash
 
     - uses: fabasoad/data-format-converter-action@main
-      id: yaml-to-json
+      id: json-to-yaml
       with:
         input: "merged-config.json"
         from: "json"
@@ -118,4 +118,4 @@ runs:
       id: result
       with:
         query: .
-        config: ${{ steps.yaml-to-json.outputs.result }}
+        config: ${{ steps.json-to-yaml.outputs.result }}
