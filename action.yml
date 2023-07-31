@@ -74,8 +74,9 @@ runs:
             if(environment === '${{ inputs.environment }}') {
               for(const [key, value] of Object.entries(config)) {
                 // Support `|` Operations
+                let new_value = '';
                 if(String(value).includes('|')) {
-                  let new_value = value.split('|')[0].trim()
+                  new_value = value.split('|')[0].trim()
                   operation = value.split('|')[1].trim()
                 }
             
