@@ -68,12 +68,12 @@ runs:
         script: |
           let data = JSON.parse(`${{ steps.yaml-to-json.outputs.output }}`);
           let environment = '${{ inputs.environment }}';
-          let operation = '';
           
           for(const [environment, config] of Object.entries(data)) {
             if(environment === '${{ inputs.environment }}') {
               for(const [key, value] of Object.entries(config)) {
                 // Support `|` Operations
+                let operation = '';
                 let new_value = '';
                 if(String(value).includes('|')) {
                   new_value = value.split('|')[0].trim()
