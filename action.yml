@@ -71,6 +71,26 @@ runs:
           for(const [environment, config] of Object.entries(data)) {
             if(environment === '${{ inputs.environment }}') {
               for(const [key, value] of Object.entries(config)) {
+                // Support `|` Operations
+                if(String(value).includes('|')) {
+                  value = value.split('|')[0].trim()
+                  operation = value.split('|')[1].trim()
+                }
+            
+                if(operation === 'kebab' || operation === 'kebabcase' || operation === 'toKebab') {
+                  value = value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_/]+/g, '-').toLowerCase()
+                }
+                
+                if(operation === 'upper' || operation === 'uppercase' || operation === 'toUpper') {
+                  value = value.toLowerCase()
+                }
+          
+                if(operation === 'lower' || operation === 'lowercase' || operation === 'toLower') {
+                  value = value.toLowerCase()
+                }
+          
+                data[environment][key] = value;
+          
                 if(key === 'reformat') {
                   core.setOutput('reformat', value);
                   delete data[environment][key];

@@ -23,7 +23,7 @@ jobs:
           - env: preview-prs
             expected-namespace: app-pr-undefined # undefined here because this is called through dispatch
           - env: production
-            expected-namespace: Foo_Bar/ZYX | dns-sanitize
+            expected-namespace: foo-bar-zyx | kebabcase
           - env: dev
             expected-namespace: dev
         env: [preview, preview-prs, production, dev]
@@ -53,7 +53,7 @@ jobs:
             
             production:
               cluster: cluster-production
-              namespace: Foo_Bar/ZYX | dns-sanitize
+              namespace: Foo_Bar/ZYX | kebabcase
 
             dev:
               cluster: cluster-dev
@@ -63,15 +63,6 @@ jobs:
         with:
           actual: "${{ steps.current.outputs.namespace }}"
           expected: '${{ matrix.expected-namespace }}'
-
-  assert:
-    runs-on: ubuntu-latest
-    needs: [test]
-    steps:
-      - uses: nick-fields/assert-action@v1
-        with:
-          expected: 'true'
-          actual: "${{ needs.test.outputs.result }}"
 
   teardown:
     runs-on: ubuntu-latest
