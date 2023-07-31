@@ -51,8 +51,8 @@ runs:
     - id: yaml-to-json
       shell: bash
       run: |
-        echo ${{ inputs.config }} | yq -j . > /tmp/config.json
-        echo "::set-output name=result::$(cat /tmp/config.json)"
+        echo 'json=$(echo ${{ inputs.config }} | yq -j .)' >> $GITHUB_OUTPUT
+        
         
     - name: Evaluate Config
       id: parse-config
