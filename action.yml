@@ -1,23 +1,155 @@
-name: 'Example composite GitHub action'
-description: 'Example composite GitHub action'
-author: hello@cloudposse.com
-branding:
-  icon: 'file'
-  color: 'white'
+name: 'Environments - ArgoCD'
+description: 'Get information about environment'
 inputs:
-  param1:
+  environment:
+    description: "Environment"
     required: true
-    description: "Input parameter placeholder"
-    default: "true"
+  namespace:
+    description: Kubernetes namespace
+    required: true
+  application:
+    description: "The application name"
+    required: false
+  config:
+    description: "configuration"
+    required: true
+  namespace-prefix:
+    description: Kubernetes namespace prefix
+    required: false
+    default: ''
+  namespace-suffix:
+    description: Kubernetes namespace suffix
+    required: false
+    default: ''
+  namespace-deny-list:
+    description: Kubernetes namespace deny list, generated names cannot contain this comma separated list.
+    required: false
+    default: kube-system,kube-public,default
 outputs:
-  result1:
-    description: "Output result placeholder"
-    value: "${{ steps.context.outputs.action-result }}"
+  name:
+    description: "Environment name"
+    value: ${{ inputs.environment }}
+  role:
+    description: "Environments that need to be deployed"
+    value: ${{ steps.result.outputs.cluster-role }}
+  cluster:
+    description: "Environments that need to be destroyed"
+    value: ${{ steps.result.outputs.cluster }}
+  namespace:
+    description: "Namespace"
+    value: ${{ steps.result.outputs.namespace }}
+  ssm-path:
+    description: "Path to ssm secrets"
+    value: ${{ steps.result.outputs.ssm-path }}
+  environment-config:
+    description: "Environment configuration"
+    value: ${{ steps.json-to-yaml.outputs.output }}
 runs:
   using: "composite"
   steps:
-    - id: context
-      shell: bash
-      run: |
-          echo "action-result=${{ inputs.param1 }}" >> $GITHUB_OUTPUT
 
+    - uses: actions/checkout@v3
+      
+    - run: |
+        echo '''${{ inputs.config }}''' > config.yml
+      shell: bash
+      
+    - uses: fabasoad/data-format-converter-action@main
+      id: yaml-to-json
+      with:
+        input: "config.yml"
+        from: "yaml"
+        to: "json"
+    
+    - name: Evaluate Config
+      id: parse-config
+      uses: actions/github-script@v6
+      with:
+        script: |
+          let data = JSON.parse(`${{ steps.yaml-to-json.outputs.output }}`);
+          let environment = '${{ inputs.environment }}';
+          
+          for(const [environment, config] of Object.entries(data)) {
+            if(environment === '${{ inputs.environment }}') {
+              for(const [key, value] of Object.entries(config)) {
+                // Support `|` Operations
+                let operation = '';
+                let new_value = '';
+                if(String(value).includes('|')) {
+                  new_value = value.split('|')[0].trim()
+                  operation = value.split('|')[1].trim()
+                }
+            
+                switch(operation) {
+                  case 'kebab':
+                  case 'kebabcase':
+                  case 'toKebab':
+                    new_value = new_value.replace(/([a-z])([A-Z])/g, "$1-$2").replace(/[\s_/]+/g, '-').toLowerCase()
+                    break;
+                  case 'upper':
+                  case 'uppercase':
+                  case 'toUpper':
+                    new_value = new_value.toLowerCase()
+                    break;
+                  case 'lower':
+                  case 'lowercase':
+                  case 'toLower':
+                    new_value = new_value.toLowerCase()
+                    break;
+                  default:
+                    new_value = new_value
+                }
+          
+                if(new_value !== '') {
+                  data[environment][key] = new_value;
+                }
+          
+                if(key === 'reformat') {
+                  core.setOutput('reformat', value);
+                  delete data[environment][key];
+                }
+              }
+            }
+          }
+          core.setOutput('stripped-config', JSON.stringify(data[environment]));
+          
+    - name: Reformat
+      if: ${{ steps.parse-config.outputs.reformat }}
+      uses: cloudposse/kubernetes-namespace-builder-composite-action@main
+      id: reformat
+      with:
+        flavor: ${{ steps.parse-config.outputs.reformat }}
+        app-name: ${{ inputs.application }}
+        prefix: ${{ inputs.namespace-prefix }}
+        suffix: ${{ inputs.namespace-suffix }}
+        deny-list: ${{ inputs.namespace-deny-list }}
+        override-branch-name: ${{ inputs.namespace }}
+
+    - name: Merge Substitutions
+      id: merge-config
+      uses: actions/github-script@v6
+      with:
+        script: |
+          let data = JSON.parse(`${{ steps.parse-config.outputs.stripped-config }}`);
+          if('${{ steps.parse-config.outputs.reformat }}') {
+            data['namespace'] = '${{ steps.reformat.outputs.kubernetes-namespace }}';
+          }
+          core.setOutput('merged-config', JSON.stringify(data));
+    
+    - run: |
+        echo '''${{ steps.merge-config.outputs.merged-config }}''' > merged-config.json
+      shell: bash
+
+    - uses: fabasoad/data-format-converter-action@main
+      id: json-to-yaml
+      with:
+        input: "merged-config.json"
+        from: "json"
+        to: "yaml"
+        
+    - name: Environment info
+      uses: cloudposse/github-action-yaml-config-query@0.1.0
+      id: result
+      with:
+        query: .
+        config: ${{ steps.json-to-yaml.outputs.output }}
