@@ -29,7 +29,7 @@ jobs:
             expected-cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
           - env: custom
             expected-foo: bar
-            expected-namespace: app-ns
+            expected-namespace: app-dev
             expected-service-config-ssm-path: service/app/config/custom/app-ns
         env: [preview, preview-prs, production, dev]
     runs-on: ubuntu-latest
@@ -67,7 +67,7 @@ jobs:
 
             custom:
               cluster: dev
-              namespace: ${{inputs.namespace}}
+              namespace: dev
               cluster-role: foo
               service-config-ssm-path: service/${{ inputs.application }}/config/${{ inputs.environment }}/${{ inputs.namespace }}
               foo: bar
