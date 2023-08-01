@@ -86,7 +86,7 @@ jobs:
       - uses: nick-fields/assert-action@v1
         if: ${{ matrix.expected-foo }}
         with:
-          actual: "${{ steps.current.outputs.role }}"
+          actual: "${{ steps.current.outputs.foo }}"
           expected: '${{ matrix.expected-foo }}'
           
       - uses: nick-fields/assert-action@v1
