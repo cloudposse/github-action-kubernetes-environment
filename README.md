@@ -1,6 +1,8 @@
 
 <!-- markdownlint-disable -->
-# example-github-action-composite [![Latest Release](https://img.shields.io/github/release/cloudposse/example-github-action-composite.svg)](https://github.com/cloudposse/example-github-action-composite/releases/latest) [![Slack Community](https://slack.cloudposse.com/badge.svg)](https://slack.cloudposse.com)
+# github-action-kubernetes-environment
+
+ [![Latest Release](https://img.shields.io/github/release/cloudposse/github-action-kubernetes-environment.svg)](https://github.com/cloudposse/github-action-kubernetes-environment/releases/latest) [![Slack Community](https://slack.cloudposse.com/badge.svg)](https://slack.cloudposse.com)
 <!-- markdownlint-restore -->
 
 [![README Header][readme_header_img]][readme_header_link]
@@ -28,7 +30,7 @@
 
 -->
 
-Template repository of composite GitHub Action
+This repository wraps the environment information action, allowing it to be used as a replacement in support of various string functions and namespace standardization.
 
 ---
 
@@ -58,8 +60,9 @@ It's 100% Open Source and licensed under the [APACHE2](LICENSE).
 
 ## Introduction
 
-This is template repository to create composite GitHub Actions. 
-Feel free to use it as reference and starting point.
+We often find when deploying with various environments that we need to standardize the namespace names. This repository wraps the environment information action, allowing it to be used as a replacement in support of various string functions and namespace standardization.
+
+With this action, you can use pipe functions to standardize the namespace names, for example, to lowercase, or to replace a dash with an underscore you can use ` | kebabcase` or `| toLower`
 
 
 
@@ -69,26 +72,147 @@ Feel free to use it as reference and starting point.
 
 
 
+
+To use this action, you'll want to create a workflow and argocd repository.
+This action is intended to replace cloudposse/github-action-yaml-config-query by wrapping it with helper actions.
+
+With this action your `config` input can have several helper functions.
+
+* `reformat` this replaces the namespace with a flavor of your choice. this is a key added to an environments configuration. See snipped below for example
+  * `branch-name` will use the branch name as the namespace
+  * `pr-number` will use the PR number as the namespace
+* `| functions`: you can now perform simple string operations on keys in your environment configuration. This can help prevent dns invalid characters from becoming your namespace based on the branch name.
+  * `| kebabcase` will convert the string to kebabcase (alternatively you can use `| toKebab` or `| kebab`)
+  * `| lowercase` will convert the string to lowercase (alternatively you can use `| toLower` or `| lower`)
+  * `| uppercase` will convert the string to uppercase (alternatively you can use `| toUpper` or `| upper`) Though this is perhaps less helpful as it is not valid in kubernetes nor dns.
+
 ```yaml
-  name: Pull Request
-  on:
-    pull_request:
-      branches: [ 'main' ]
-      types: [opened, synchronize, reopened, closed, labeled, unlabeled]
+- name: Environment info
+  # We recommend pinning this action to a specific release or version range to ensure stability
+  uses: cloudposse/github-action-kubernetes-environment@main
+  id: result
+  with:
+    environment: ${{ inputs.environment }}
+    namespace: ${{ inputs.namespace }}
+    application: ${{ inputs.application }}
+    config: |
+      preview:
+        cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-dev/apps
+        cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+        namespace: ${{ inputs.namespace }}
+        reformat: branch-name # reformats namespace to be branch name as kebabcase, alternatively use `pr-number` here for `pr-123` as your namespace
+        ssm-path: platform/dev-cluster
+      qa1:
+        cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-staging/apps
+        cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+        namespace: QA1/MY-APP | kebabcase
+        # output namespace will become qa1-my-app
+        ssm-path: platform/staging-cluster
+  ```
 
-  jobs:
-    context:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Example action
-          uses: cloudposse/example-github-action-composite@main
-          id: example
-          with:
-            param1: true
 
-      outputs:
-        result: ${{ steps.example.outputs.result1 }}
+Full Workflow example:
+
+<details><summary>Full Example:</summary>
+
+```yaml
+name: 'Environments - ArgoCD'
+description: 'Get information about environment'
+inputs:
+  environment:
+    description: "Environment name"
+    required: true
+  application:
+    description: "The application name"
+    required: false
+  namespace:
+    description: "Namespace name"
+    required: true
+outputs:
+  name:
+    description: "Environment name"
+    value: ${{ inputs.environment }}
+  region:
+    description: "Default AWS Region"
+    value: us-east-2
+  role:
+    description: "Environments that need to be deployed"
+    value: ${{ steps.result.outputs.role }}
+  cluster:
+    description: "Environments that need to be destroyed"
+    value: ${{ steps.result.outputs.cluster }}
+  namespace:
+    description: "Namespace"
+    value: ${{ steps.result.outputs.namespace }}
+  ssm-path:
+    description: "Path to ssm secrets"
+    value: ${{ steps.result.outputs.ssm-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Environment info
+      # We recommend pinning this action to a specific release or version range to ensure stability
+      uses: cloudposse/github-action-kubernetes-environment@main
+      id: result
+      with:
+        environment: ${{ inputs.environment }}
+        namespace: ${{ inputs.namespace }}
+        application: ${{ inputs.application }}
+        config: |
+          preview:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-dev/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: ${{ inputs.namespace }}
+            ssm-path: platform/dev-cluster
+            reformat: branch-name
+          qa1:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-staging/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: qa1
+            ssm-path: platform/staging-cluster
+          qa2:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-staging/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: qa2
+            ssm-path: platform/staging-cluster
+          qa3:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-staging/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: qa3
+            ssm-path: platform/staging-cluster
+          qa4:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-staging/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: qa4
+            ssm-path: platform/staging-cluster
+          
+          production:
+            cluster: https://github.com/athoteldev/argocd-deploy-prod/blob/main/plat/ue2-prod/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: production
+            ssm-path: platform/prod-cluster
+          
+          staging:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-staging/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: staging
+            ssm-path: platform/staging-cluster
+          
+          sandbox:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-sandbox/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: sandbox
+            ssm-path: platform/sandbox-cluster
+
+          dev:
+            cluster: https://github.com/cloudposse/argocd-repo/blob/main/plat/ue2-dev/apps
+            cluster-role: arn:aws:iam::123456789012:role/my-gha-cluster-role
+            namespace: dev  
+            ssm-path: platform/dev-cluster
 ```
+
+</details>
 
 
 
@@ -101,21 +225,32 @@ Feel free to use it as reference and starting point.
 
 | Name | Description | Default | Required |
 |------|-------------|---------|----------|
-| param1 | Input parameter placeholder | true | true |
+| application | The application name | N/A | false |
+| config | configuration | N/A | true |
+| environment | Environment | N/A | true |
+| namespace | Kubernetes namespace | N/A | true |
+| namespace-deny-list | Kubernetes namespace deny list, generated names cannot contain this comma separated list. | kube-system,kube-public,default | false |
+| namespace-prefix | Kubernetes namespace prefix |  | false |
+| namespace-suffix | Kubernetes namespace suffix |  | false |
 
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| result1 | Output result placeholder |
+| cluster | Environments that need to be destroyed |
+| environment-config | Environment configuration |
+| name | Environment name |
+| namespace | Namespace |
+| role | Environments that need to be deployed |
+| ssm-path | Path to ssm secrets |
 <!-- markdownlint-restore -->
 
 
 
 ## Share the Love
 
-Like this project? Please give it a ★ on [our GitHub](https://github.com/cloudposse/example-github-action-composite)! (it helps us **a lot**)
+Like this project? Please give it a ★ on [our GitHub](https://github.com/cloudposse/github-action-kubernetes-environment)! (it helps us **a lot**)
 
 Are you using this project or any of our other projects? Consider [leaving a testimonial][testimonial]. =)
 
@@ -139,7 +274,7 @@ For additional context, refer to some of these links.
 
 **Got a question?** We got answers.
 
-File a GitHub [issue](https://github.com/cloudposse/example-github-action-composite/issues), send us an [email][email] or join our [Slack Community][slack].
+File a GitHub [issue](https://github.com/cloudposse/github-action-kubernetes-environment/issues), send us an [email][email] or join our [Slack Community][slack].
 
 [![README Commercial Support][readme_commercial_support_img]][readme_commercial_support_link]
 
@@ -187,7 +322,7 @@ Sign up for [our newsletter][newsletter] that covers everything on our technolog
 
 ### Bug Reports & Feature Requests
 
-Please use the [issue tracker](https://github.com/cloudposse/example-github-action-composite/issues) to report any bugs or file feature requests.
+Please use the [issue tracker](https://github.com/cloudposse/github-action-kubernetes-environment/issues) to report any bugs or file feature requests.
 
 ### Developing
 
@@ -264,44 +399,44 @@ Check out [our other projects][github], [follow us on twitter][twitter], [apply 
 ### Contributors
 
 <!-- markdownlint-disable -->
-|  [![Igor Rodionov][goruha_avatar]][goruha_homepage]<br/>[Igor Rodionov][goruha_homepage] |
+|  [![Benjamin Smith][benbentwo_avatar]][benbentwo_homepage]<br/>[Benjamin Smith][benbentwo_homepage] |
 |---|
 <!-- markdownlint-restore -->
 
-  [goruha_homepage]: https://github.com/goruha
-  [goruha_avatar]: https://img.cloudposse.com/150x150/https://github.com/goruha.png
+  [benbentwo_homepage]: https://github.com/benbentwo
+  [benbentwo_avatar]: https://img.cloudposse.com/150x150/https://github.com/benbentwo.png
 
 [![README Footer][readme_footer_img]][readme_footer_link]
 [![Beacon][beacon]][website]
 <!-- markdownlint-disable -->
   [logo]: https://cloudposse.com/logo-300x69.svg
-  [docs]: https://cpco.io/docs?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=docs
-  [website]: https://cpco.io/homepage?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=website
-  [github]: https://cpco.io/github?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=github
-  [jobs]: https://cpco.io/jobs?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=jobs
-  [hire]: https://cpco.io/hire?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=hire
-  [slack]: https://cpco.io/slack?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=slack
-  [linkedin]: https://cpco.io/linkedin?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=linkedin
-  [twitter]: https://cpco.io/twitter?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=twitter
-  [testimonial]: https://cpco.io/leave-testimonial?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=testimonial
-  [office_hours]: https://cloudposse.com/office-hours?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=office_hours
-  [newsletter]: https://cpco.io/newsletter?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=newsletter
-  [discourse]: https://ask.sweetops.com/?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=discourse
-  [email]: https://cpco.io/email?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=email
-  [commercial_support]: https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=commercial_support
-  [we_love_open_source]: https://cpco.io/we-love-open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=we_love_open_source
-  [terraform_modules]: https://cpco.io/terraform-modules?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=terraform_modules
+  [docs]: https://cpco.io/docs?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=docs
+  [website]: https://cpco.io/homepage?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=website
+  [github]: https://cpco.io/github?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=github
+  [jobs]: https://cpco.io/jobs?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=jobs
+  [hire]: https://cpco.io/hire?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=hire
+  [slack]: https://cpco.io/slack?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=slack
+  [linkedin]: https://cpco.io/linkedin?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=linkedin
+  [twitter]: https://cpco.io/twitter?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=twitter
+  [testimonial]: https://cpco.io/leave-testimonial?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=testimonial
+  [office_hours]: https://cloudposse.com/office-hours?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=office_hours
+  [newsletter]: https://cpco.io/newsletter?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=newsletter
+  [discourse]: https://ask.sweetops.com/?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=discourse
+  [email]: https://cpco.io/email?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=email
+  [commercial_support]: https://cpco.io/commercial-support?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=commercial_support
+  [we_love_open_source]: https://cpco.io/we-love-open-source?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=we_love_open_source
+  [terraform_modules]: https://cpco.io/terraform-modules?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=terraform_modules
   [readme_header_img]: https://cloudposse.com/readme/header/img
-  [readme_header_link]: https://cloudposse.com/readme/header/link?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=readme_header_link
+  [readme_header_link]: https://cloudposse.com/readme/header/link?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=readme_header_link
   [readme_footer_img]: https://cloudposse.com/readme/footer/img
-  [readme_footer_link]: https://cloudposse.com/readme/footer/link?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=readme_footer_link
+  [readme_footer_link]: https://cloudposse.com/readme/footer/link?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=readme_footer_link
   [readme_commercial_support_img]: https://cloudposse.com/readme/commercial-support/img
-  [readme_commercial_support_link]: https://cloudposse.com/readme/commercial-support/link?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/example-github-action-composite&utm_content=readme_commercial_support_link
-  [share_twitter]: https://twitter.com/intent/tweet/?text=example-github-action-composite&url=https://github.com/cloudposse/example-github-action-composite
-  [share_linkedin]: https://www.linkedin.com/shareArticle?mini=true&title=example-github-action-composite&url=https://github.com/cloudposse/example-github-action-composite
-  [share_reddit]: https://reddit.com/submit/?url=https://github.com/cloudposse/example-github-action-composite
-  [share_facebook]: https://facebook.com/sharer/sharer.php?u=https://github.com/cloudposse/example-github-action-composite
-  [share_googleplus]: https://plus.google.com/share?url=https://github.com/cloudposse/example-github-action-composite
-  [share_email]: mailto:?subject=example-github-action-composite&body=https://github.com/cloudposse/example-github-action-composite
-  [beacon]: https://ga-beacon.cloudposse.com/UA-76589703-4/cloudposse/example-github-action-composite?pixel&cs=github&cm=readme&an=example-github-action-composite
+  [readme_commercial_support_link]: https://cloudposse.com/readme/commercial-support/link?utm_source=github&utm_medium=readme&utm_campaign=cloudposse/github-action-kubernetes-environment&utm_content=readme_commercial_support_link
+  [share_twitter]: https://twitter.com/intent/tweet/?text=github-action-kubernetes-environment&url=https://github.com/cloudposse/github-action-kubernetes-environment
+  [share_linkedin]: https://www.linkedin.com/shareArticle?mini=true&title=github-action-kubernetes-environment&url=https://github.com/cloudposse/github-action-kubernetes-environment
+  [share_reddit]: https://reddit.com/submit/?url=https://github.com/cloudposse/github-action-kubernetes-environment
+  [share_facebook]: https://facebook.com/sharer/sharer.php?u=https://github.com/cloudposse/github-action-kubernetes-environment
+  [share_googleplus]: https://plus.google.com/share?url=https://github.com/cloudposse/github-action-kubernetes-environment
+  [share_email]: mailto:?subject=github-action-kubernetes-environment&body=https://github.com/cloudposse/github-action-kubernetes-environment
+  [beacon]: https://ga-beacon.cloudposse.com/UA-76589703-4/cloudposse/github-action-kubernetes-environment?pixel&cs=github&cm=readme&an=github-action-kubernetes-environment
 <!-- markdownlint-restore -->
