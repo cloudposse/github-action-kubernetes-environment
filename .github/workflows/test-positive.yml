@@ -83,16 +83,23 @@ jobs:
           actual: "${{ steps.current.outputs.role }}"
           expected: '${{ matrix.expected-cluster-role }}'
           
+      - name: Environment info
+        uses: cloudposse/github-action-yaml-config-query@0.1.0
+        id: result
+        with:
+          query: .
+          config: ${{ steps.current.outputs.environment-config }}
+
       - uses: nick-fields/assert-action@v1
         if: ${{ matrix.expected-foo }}
         with:
-          actual: "${{ steps.current.outputs.foo }}"
+          actual: "${{ steps.result.outputs.foo }}"
           expected: '${{ matrix.expected-foo }}'
           
       - uses: nick-fields/assert-action@v1
         if: ${{ matrix.expected-service-config-ssm-path }}
         with:
-          actual: "${{ steps.current.outputs.service-config-ssm-path }}"
+          actual: "${{ steps.result.outputs.service-config-ssm-path }}"
           expected: '${{ matrix.expected-service-config-ssm-path }}'
 
   teardown:
