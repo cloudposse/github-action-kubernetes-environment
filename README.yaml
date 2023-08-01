@@ -87,6 +87,16 @@ usage: |-
           ssm-path: platform/staging-cluster
     ```
   
+  * To get custom key value pairs you can query the selected environment with a follow up step:
+        
+  ```yaml
+  - name: Environment info
+  uses: cloudposse/github-action-yaml-config-query@0.1.0
+  id: environment-info
+  with:
+    query: .
+    config: ${{ steps.result.outputs.environment-config }}
+  ```
   
   <details><summary>  Full Workflow example:</summary>
   

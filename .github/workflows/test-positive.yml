@@ -69,7 +69,7 @@ jobs:
               cluster: dev
               namespace: dev
               cluster-role: foo
-              service-config-ssm-path: service/${{ inputs.application }}/config/${{ inputs.environment }}/${{ inputs.namespace }}
+              service-config-ssm-path: service/app/config/custom/app-ns
               foo: bar
             
       - uses: nick-fields/assert-action@v1

@@ -110,10 +110,18 @@ With this action your `config` input can have several helper functions.
         ssm-path: platform/staging-cluster
   ```
 
+* To get custom key value pairs you can query the selected environment with a follow up step:
+      
+```yaml
+- name: Environment info
+uses: cloudposse/github-action-yaml-config-query@0.1.0
+id: environment-info
+with:
+  query: .
+  config: ${{ steps.result.outputs.environment-config }}
+```
 
-Full Workflow example:
-
-<details><summary>Full Example:</summary>
+<details><summary>  Full Workflow example:</summary>
 
 ```yaml
 name: 'Environments - ArgoCD'
