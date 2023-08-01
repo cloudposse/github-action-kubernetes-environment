@@ -5,7 +5,7 @@
 #
 
 # Name of this project
-name: example-github-action-composite
+name: github-action-kubernetes-environment
 
 # Tags of this project
 tags:
@@ -18,13 +18,13 @@ tags:
 license: "APACHE2"
 
 # Canonical GitHub repo
-github_repo: cloudposse/example-github-action-composite
+github_repo: cloudposse/github-action-kubernetes-environment
 
 # Badges to display
 badges:
   - name: "Latest Release"
-    image: "https://img.shields.io/github/release/cloudposse/example-github-action-composite.svg"
-    url: "https://github.com/cloudposse/example-github-action-composite/releases/latest"
+    image: "https://img.shields.io/github/release/cloudposse/github-action-kubernetes-environment.svg"
+    url: "https://github.com/cloudposse/github-action-kubernetes-environment/releases/latest"
   - name: "Slack Community"
     image: "https://slack.cloudposse.com/badge.svg"
     url: "https://slack.cloudposse.com"
@@ -32,11 +32,12 @@ badges:
 related: []
 
 # Short description of this project
-description: Template repository of composite GitHub Action
+description: This repository wraps the environment information action, allowing it to be used as a replacement in support of various string functions and namespace standardization.
 
 introduction: |-
-  This is template repository to create composite GitHub Actions. 
-  Feel free to use it as reference and starting point.
+  We often find when deploying with various environments that we need to standardize the namespace names. This repository wraps the environment information action, allowing it to be used as a replacement in support of various string functions and namespace standardization.
+
+  With this action, you can use pipe functions to standardize the namespace names, for example, to lowercase, or to replace a dash with an underscore you can use ` | kebabcase` or `| toLower`
 
 references:
   - name: "github-actions-workflows"
@@ -60,7 +61,7 @@ usage: |-
         runs-on: ubuntu-latest
         steps:
           - name: Example action
-            uses: cloudposse/example-github-action-composite@main
+            uses: cloudposse/github-action-kubernetes-environment@main
             id: example
             with:
               param1: true
@@ -74,5 +75,5 @@ include:
 
 # Contributors to this project
 contributors:
-  - name: "Igor Rodionov"
-    github: "goruha"
+  - name: "Benjamin Smith"
+    github: "benbentwo"
