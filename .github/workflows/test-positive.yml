@@ -4,7 +4,7 @@ on:
 #  #
 #  # Added pull_request to register workflow from the PR.
 #  # Read more https://stackoverflow.com/questions/63362126/github-actions-how-to-run-a-workflow-created-on-a-non-master-branch-from-the-wo
-#  pull_request: {}
+  pull_request: {}
   workflow_dispatch: {}
 
 jobs:
@@ -31,6 +31,8 @@ jobs:
             expected-foo: bar
             expected-namespace: dev
             expected-service-config-ssm-path: service/app/config/custom/app-ns
+          - env: long
+            expected-namespace: long-namespace
         env: [preview, preview-prs, production, dev]
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -71,6 +73,11 @@ jobs:
               cluster-role: foo
               service-config-ssm-path: service/app/config/custom/app-ns
               foo: bar
+
+            long:
+              cluster: cluster-preview
+              namespace: ${{inputs.namespace}}
+              reformat: branch-name
             
       - uses: nick-fields/assert-action@v1
         with:

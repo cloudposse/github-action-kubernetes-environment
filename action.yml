@@ -99,6 +99,10 @@ runs:
                   default:
                     new_value = new_value
                 }
+
+                if(new_value.length > 63) {
+                  new_value = new_value.substring(63)
+                }
           
                 if(new_value !== '') {
                   data[environment][key] = new_value;
