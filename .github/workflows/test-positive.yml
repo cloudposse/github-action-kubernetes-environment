@@ -84,7 +84,7 @@ jobs:
           expected: '${{ matrix.expected-cluster-role }}'
           
       - name: Environment info
-        uses: cloudposse/github-action-yaml-config-query@0.1.0
+        uses: cloudposse/github-action-yaml-config-query@0.1.4
         id: result
         with:
           query: .
