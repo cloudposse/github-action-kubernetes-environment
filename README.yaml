@@ -91,7 +91,7 @@ usage: |-
         
   ```yaml
   - name: Environment info
-  uses: cloudposse/github-action-yaml-config-query@0.1.0
+  uses: cloudposse/github-action-yaml-config-query@v1.0.0
   id: environment-info
   with:
     query: .
