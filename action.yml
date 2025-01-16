@@ -54,7 +54,7 @@ runs:
         echo '''${{ inputs.config }}''' > config.yml
       shell: bash
       
-    - uses: fabasoad/data-format-converter-action@main
+    - uses: fabasoad/data-format-converter-action@v0.3.0
       id: yaml-to-json
       with:
         input: "config.yml"
