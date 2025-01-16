@@ -72,12 +72,12 @@ jobs:
               service-config-ssm-path: service/app/config/custom/app-ns
               foo: bar
             
-      - uses: nick-fields/assert-action@v1
+      - uses: nick-fields/assert-action@v2
         with:
           actual: "${{ steps.current.outputs.namespace }}"
           expected: '${{ matrix.expected-namespace }}'
 
-      - uses: nick-fields/assert-action@v1
+      - uses: nick-fields/assert-action@v2
         if: ${{ matrix.expected-cluster-role }}
         with:
           actual: "${{ steps.current.outputs.role }}"
@@ -90,13 +90,13 @@ jobs:
           query: .
           config: ${{ steps.current.outputs.environment-config }}
 
-      - uses: nick-fields/assert-action@v1
+      - uses: nick-fields/assert-action@v2
         if: ${{ matrix.expected-foo }}
         with:
           actual: "${{ steps.result.outputs.foo }}"
           expected: '${{ matrix.expected-foo }}'
           
-      - uses: nick-fields/assert-action@v1
+      - uses: nick-fields/assert-action@v2
         if: ${{ matrix.expected-service-config-ssm-path }}
         with:
           actual: "${{ steps.result.outputs.service-config-ssm-path }}"
