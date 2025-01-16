@@ -54,7 +54,7 @@ runs:
         echo '''${{ inputs.config }}''' > config.yml
       shell: bash
       
-    - uses: fabasoad/data-format-converter-action@v0.3.0
+    - uses: fabasoad/data-format-converter-action@v1.0.0
       id: yaml-to-json
       with:
         input: "config.yml"
@@ -140,7 +140,7 @@ runs:
         echo '''${{ steps.merge-config.outputs.merged-config }}''' > merged-config.json
       shell: bash
 
-    - uses: fabasoad/data-format-converter-action@v0.3.0
+    - uses: fabasoad/data-format-converter-action@v1.0.0
       id: json-to-yaml
       with:
         input: "merged-config.json"
