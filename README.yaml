@@ -199,8 +199,7 @@ usage: |-
   
   </details>
 
-include:
-  - "docs/github-action.md"
+include: []
 
 # Contributors to this project
 contributors:
